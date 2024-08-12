@@ -168,4 +168,6 @@ internvl_chat/unittest/
 internvl_chat/data/
 Husky2/*
 data_process/
+*/math_data/
+work_dirs/
 *distillation*

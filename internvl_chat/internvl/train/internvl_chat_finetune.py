@@ -278,7 +278,7 @@ class LazySupervisedDataset(Dataset):
             self.conv2length = {}  # Using a dictionary to speed up token length calculation
             self.length = []
             for data_item in self.raw_data:
-                data_item = json.loads(data_item)
+                data_item = json.loads(data_item)   
                 if 'length' in data_item:
                     token_length = data_item['length']  # Use precomputed length if available
                 else:
@@ -604,8 +604,14 @@ def main():
     # Parse input arguments
     # See all possible arguments in src/transformers/training_args.py
     # If use DeepSpeed zero3, init_dist must before HfArgumentParser
-    launcher = os.environ.get('LAUNCHER', 'slurm')
-    init_dist(launcher=launcher, backend='nccl')
+
+    # ===============================================
+    # NOTE: 注视掉
+    # launcher = os.environ.get('LAUNCHER', 'slurm')
+    # init_dist(launcher=launcher, backend='nccl')
+    # ===============================================
+
+
     parser = HfArgumentParser((ModelArguments, DataTrainingArguments, TrainingArguments))
     if len(sys.argv) == 2 and sys.argv[1].endswith('.json'):
         # If we pass only one argument to the script, and it's the path to a json file,
@@ -617,6 +623,7 @@ def main():
     # Sending telemetry. Tracking the example usage helps us better allocate resources to maintain them. The
     # information sent is the one passed as arguments along with your Python/PyTorch versions.
     # send_example_telemetry('InternV-Chat', model_args, data_args)
+    
 
     # Setup logging
     logging.basicConfig(
@@ -723,6 +730,79 @@ def main():
         model = InternVLChatModel(internvl_chat_config, vision_model, llm)
     model.img_context_token_id = img_context_token_id
 
+
+    device_map = {
+        "vision_model.embeddings": 0,
+        "vision_model.encoder.layers.0": 0,
+        "vision_model.encoder.layers.1": 0,
+        "vision_model.encoder.layers.2": 0,
+        "vision_model.encoder.layers.3": 0,
+        "vision_model.encoder.layers.4": 0,
+        "vision_model.encoder.layers.5": 0,
+        "vision_model.encoder.layers.6": 1,
+        "vision_model.encoder.layers.7": 1,
+        "vision_model.encoder.layers.8": 1,
+        "vision_model.encoder.layers.9": 1,
+        "vision_model.encoder.layers.10": 1,
+        "vision_model.encoder.layers.11": 1,
+        "vision_model.encoder.layers.12": 2,
+        "vision_model.encoder.layers.13": 2,
+        "vision_model.encoder.layers.14": 2,
+        "vision_model.encoder.layers.15": 2,
+        "vision_model.encoder.layers.16": 2,
+        "vision_model.encoder.layers.17": 2,
+        "vision_model.encoder.layers.18": 3,
+        "vision_model.encoder.layers.19": 3,
+        "vision_model.encoder.layers.20": 3,
+        "vision_model.encoder.layers.21": 3,
+        "vision_model.encoder.layers.22": 3,
+        "vision_model.encoder.layers.23": 3,
+        "language_model.model.tok_embeddings": 0,
+        "language_model.model.layers.0": 0,
+        "language_model.model.layers.1": 0,
+        "language_model.model.layers.2": 0,
+        "language_model.model.layers.3": 0,
+        "language_model.model.layers.4": 0,
+        "language_model.model.layers.5": 0,
+        "language_model.model.layers.6": 0,
+        "language_model.model.layers.7": 0,
+        "language_model.model.layers.8": 1,
+        "language_model.model.layers.9": 1,
+        "language_model.model.layers.10": 1,
+        "language_model.model.layers.11": 1,
+        "language_model.model.layers.12": 1,
+        "language_model.model.layers.13": 1,
+        "language_model.model.layers.14": 1,
+        "language_model.model.layers.15": 1,
+        "language_model.model.layers.16": 2,
+        "language_model.model.layers.17": 2,
+        "language_model.model.layers.18": 2,
+        "language_model.model.layers.19": 2,
+        "language_model.model.layers.20": 2,
+        "language_model.model.layers.21": 2,
+        "language_model.model.layers.22": 2,
+        "language_model.model.layers.23": 2,
+        "language_model.model.layers.24": 3,
+        "language_model.model.layers.25": 3,
+        "language_model.model.layers.26": 3,
+        "language_model.model.layers.27": 3,
+        "language_model.model.layers.28": 3,
+        "language_model.model.layers.29": 3,
+        "language_model.model.layers.30": 3,
+        "language_model.model.layers.31": 3,
+        "language_model.model.norm": 3,
+        "language_model.output": 3,
+        "mlp1": 0
+    }
+
+
+    # =============================
+    # NOTE: 新增加
+    from accelerate import dispatch_model
+    model = dispatch_model(model, device_map)
+    # =============================
+    
+
     assert model.config.downsample_ratio == data_args.down_sample_ratio
 
     if model_args.mlp_path is not None:
@@ -800,11 +880,17 @@ def main():
             logger.info(f'Unfreezing ViT layer: {k}')
             v.requires_grad = True
 
-    # print trainable parameters
-    if dist.get_rank() == 0:
-        for name, param in model.named_parameters():
-            if param.requires_grad:
-                logger.info(name)
+    # ================================================
+    # NOTE: 更改
+    # # print trainable parameters
+    # if dist.get_rank() == 0:
+    #     for name, param in model.named_parameters():
+    #         if param.requires_grad:
+    #             logger.info(name)
+    for name, param in model.named_parameters():
+        if param.requires_grad:
+            logger.info(name)
+    # ================================================
 
     # set seed for torch dataloaders
     set_seed(training_args.seed)

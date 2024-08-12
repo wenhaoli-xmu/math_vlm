@@ -66,7 +66,6 @@ def create_optimizer(self):
     Trainer's init through `optimizers`, or subclass and override this method in a subclass.
     """
     opt_model = self.model_wrapped if is_sagemaker_mp_enabled() else self.model
-
     parameter_groups = {}
     try:  # for stage2 model
         vit_num_layers = opt_model.config.vision_config.num_hidden_layers + 2

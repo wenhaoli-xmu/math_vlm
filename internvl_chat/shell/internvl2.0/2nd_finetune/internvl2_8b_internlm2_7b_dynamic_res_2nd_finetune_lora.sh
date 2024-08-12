@@ -1,9 +1,9 @@
 set -x
 
-GPUS=${GPUS:-2}
-BATCH_SIZE=${BATCH_SIZE:-16}
-PER_DEVICE_BATCH_SIZE=${PER_DEVICE_BATCH_SIZE:-4}
-GRADIENT_ACC=$((BATCH_SIZE / PER_DEVICE_BATCH_SIZE / GPUS))
+GPUS=1
+BATCH_SIZE=16
+PER_DEVICE_BATCH_SIZE=1
+GRADIENT_ACC=16
 
 
 export PYTHONPATH="${PYTHONPATH}:$(pwd)"
@@ -22,17 +22,11 @@ fi
 # gradient accumulation steps: 2
 # total batch size: 16
 # epoch: 1
-torchrun \
-  --nnodes=1 \
-  --node_rank=0 \
-  --master_addr=127.0.0.1 \
-  --nproc_per_node=${GPUS} \
-  --master_port=${MASTER_PORT} \
-  internvl/train/internvl_chat_finetune.py \
-  --model_name_or_path "./pretrained/InternVL2-8B" \
+python ./internvl/train/internvl_chat_finetune.py \
+  --model_name_or_path "OpenGVLab/InternVL2-8B" \
   --conv_style "internlm2-chat" \
   --output_dir ${OUTPUT_DIR} \
-  --meta_path "./shell/data/internvl_1_2_finetune_custom.json" \
+  --meta_path "./shell/data/internvl_1_2_finetune_math.json" \
   --overwrite_output_dir True \
   --force_image_size 448 \
   --max_dynamic_patch 6 \
@@ -64,6 +58,5 @@ torchrun \
   --dynamic_image_size True \
   --use_thumbnail True \
   --ps_version 'v2' \
-  --deepspeed "zero_stage1_config.json" \
   --report_to "tensorboard" \
   2>&1 | tee -a "${OUTPUT_DIR}/training_log.txt"
