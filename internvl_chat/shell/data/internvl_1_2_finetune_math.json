@@ -1,9 +1,16 @@
 {
   "math-vista": {
-    "root": ".",
+    "root": "..",
     "annotation": "/home/lwh/InternVL/math_data/math_vista/captions.jsonl",
     "data_augment": false,
     "repeat_time": 1,
     "length": 1000
+  },
+  "math-verse": {
+    "root": "..",
+    "annotation": "/home/lwh/InternVL/math_data/math_verse/captions.jsonl",
+    "data_augment": false,
+    "repeat_time": 1,
+    "length": 3940
   }
 }

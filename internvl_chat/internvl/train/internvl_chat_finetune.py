@@ -915,18 +915,10 @@ def main():
             checkpoint = training_args.resume_from_checkpoint
         elif last_checkpoint is not None:
             checkpoint = last_checkpoint
-        train_result = trainer.train(resume_from_checkpoint=checkpoint)
-        trainer.save_model()  # Saves the tokenizer too for easy upload
+        trainer.train(resume_from_checkpoint=checkpoint)
 
-        metrics = train_result.metrics
-        try:
-            metrics['train_samples'] = len(train_dataset)
-        except:
-            metrics['train_samples'] = -1
-
-        trainer.log_metrics('train', metrics)
-        trainer.save_metrics('train', metrics)
-        trainer.save_state()
+    model.language_model = model.language_model.merge_and_unload()
+    model.save_pretrained("lora_finetune_v1")
 
 
 if __name__ == '__main__':
